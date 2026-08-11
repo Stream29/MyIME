@@ -1,0 +1,3 @@
+[submodule "DashVoice"]
+	path = DashVoice
+	url = git@github.com:Stream29/DashVoice.git
