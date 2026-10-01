@@ -79,8 +79,6 @@ Fcitx 输入法组包含：
 
 Android 默认输入法为 Fcitx5 for Android。中文输入由 Rime 插件和雾凇拼音提供；日语输入由同一个 Rime 实例中的 Kagiroi 方案提供。
 
-当前手机没有为中文、日文和英文注册三个独立的系统输入法入口；中文 Rime Ice 和日文 Kagiroi 保持在同一个 Fcitx Rime 实例中，通过方案切换使用。Gboard 保留为备用输入法。
-
 Rime 同步目录位于 Fcitx5 for Android 的应用专用外部存储目录：
 
 ```text
@@ -100,25 +98,9 @@ Rime 同步目录位于 Fcitx5 for Android 的应用专用外部存储目录：
 
 各设备使用不同的 Rime installation ID。OSS Bucket 中的一级目录以 installation ID 区分设备，设备不直接并发写入同一个目录。
 
-### 当前设备清理状态
-
-2026-10-02 通过 ADB 清理了旧的 ComposeIME 输入法：
-
-```text
-io.github.stream29.composeime
-```
-
-当前默认输入法仍为：
-
-```text
-org.fcitx.fcitx5.android/.input.FcitxInputMethodService
-```
-
-本次没有修改系统触感反馈设置；`haptic_feedback_enabled` 保持为 `0`。后续如果需要恢复按键震动，应单独修改 Android 系统设置，不属于输入法入口配置。
-
 ### 移动端语音输入
 
-移动端语音客户端为仓库内的 [DashVoice](https://github.com/Stream29/DashVoice) Git submodule，目录为 `DashVoice/`，声明见 `.gitmodules`。其 Android 包名为：
+移动端语音客户端为 [DashVoice](https://github.com/Stream29/DashVoice)，包名为：
 
 ```text
 io.github.stream29.dashvoice
