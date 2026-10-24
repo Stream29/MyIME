@@ -2,7 +2,9 @@
 
 ## 概要
 
-MyIME 记录当前部署在 Ubuntu 桌面端和 Android 移动端的一套跨设备输入方案。该方案包含文字输入、Rime 用户数据同步和语音输入三部分。
+MyIME 是 Ubuntu 桌面端和 Android 移动端输入法配置的管理入口，记录文字输入、Rime 用户数据同步和语音输入三部分的方案、源码关系与部署边界。
+
+桌面包版本和相关服务于 2026-10-24 复核；Android 部署记录截至 2026-10-03，不能把历史观察当成设备当前状态。
 
 - 桌面端和移动端都以 Fcitx 5 与 Rime 作为中文输入基础。
 - 中文方案和基础词库使用雾凇拼音。
@@ -13,6 +15,21 @@ MyIME 记录当前部署在 Ubuntu 桌面端和 Android 移动端的一套跨设
 - 桌面端和移动端的语音识别都使用阿里云百炼的 `qwen3-asr-flash-realtime`。
 - 桌面端使用键盘上的 Copilot 键触发语音识别。
 - 输入法、同步工具和语音客户端的源代码仓库均公开；阿里云 OSS 和百炼是外部托管服务。
+
+## 仓库关系与管理边界
+
+```text
+DeviceManagement
+└── MyIME
+    └── DashVoice
+```
+
+- 本仓库作为 DeviceManagement 的 submodule；[DashVoice](DashVoice/) 是本仓库的 submodule，避免在外层另留一份独立工作副本。
+- 输入方案、组件关系和配置位置从本 README 进入；移动端语音实现和[发布记录](https://github.com/Stream29/DashVoice/releases)归 DashVoice 管理。
+- DeviceManagement 继续管理已有部署集成：`bin/rime-oss-sync`、`bin/sway-fcitx`、`systemd/user/rime-oss-sync.{service,timer}`、`sway/common.conf` 和 `systemd/user/vinput-daemon.service.d/override.conf`。本次不移动它们的线上路径，也不重启输入服务。
+- 私有词库、正在使用的数据库、同步数据、音频、凭据和设备备份不属于本仓库的公开配置。
+- 单独获取本仓库及 DashVoice：`git clone --recurse-submodules git@github.com:Stream29/MyIME.git`。
+- 已有工作副本更新前先检查未提交修改；从父仓库运行 `git submodule update --init --recursive` 会检出父提交指定的版本，不等于自动切换到每个子仓库的最新分支。
 
 ## 整体结构
 
@@ -26,7 +43,7 @@ MyIME 记录当前部署在 Ubuntu 桌面端和 Android 移动端的一套跨设
 
 ## 桌面端
 
-当前桌面环境为 Ubuntu 26.04 LTS、GNOME Wayland 和 Fcitx 5.1.19。
+默认桌面环境为 Ubuntu 26.04 LTS、GNOME Wayland 和 Fcitx 5.1.19；另外保留独立 TTY 上的 Sway 输入法集成。
 
 Fcitx 输入法组包含：
 
@@ -47,7 +64,7 @@ Fcitx 输入法组包含：
 桌面端同步脚本位于：
 
 ```text
-~/.local/bin/rime-oss-sync
+~/ACodeSpace/push/DeviceManagement/bin/rime-oss-sync
 ```
 
 同步流程为：
@@ -58,6 +75,8 @@ Fcitx 输入法组包含：
 4. 将本机 installation ID 对应的同步目录上传到 `oss://rime-data/<installation_id>/`。
 
 `rime-oss-sync.timer` 在用户会话启动两分钟后首次执行，此后每十分钟执行一次。每次任务通过文件锁避免并发运行。
+
+用户 unit 的源码也由 DeviceManagement 管理；旧 `~/.local/bin/rime-oss-sync` 路径已不再使用。
 
 ### 桌面端语音输入
 
@@ -72,6 +91,8 @@ Fcitx 输入法组包含：
 5. 最终识别结果提交到当前输入上下文。
 
 当前模型为 `qwen3-asr-flash-realtime`。语言参数为空，由模型返回检测到的语言。
+
+2026-10-24 纳管的用户覆盖项为 `VINPUT_CAPTURE_IDLE_DESTROY_MS=60000`；包管理的主 unit 和生成的 `MemorySwapMax=0` 控制文件保持原位，不重复复制为手写配置。Provider 配置及密钥仍留在设备本地。
 
 桌面端以键盘上的 Copilot 键作为语音识别触发键。在当前 Fn Lock 状态下，直接按 Copilot 键向系统发送 `Shift+Super+XF86Assistant`。
 
@@ -106,6 +127,8 @@ Rime 同步目录位于 Fcitx5 for Android 的应用专用外部存储目录：
 io.github.stream29.dashvoice
 ```
 
+当前公开版本为 [v0.1.1](https://github.com/Stream29/DashVoice/releases/tag/v0.1.1)，`versionCode=2`，于 2026-10-24 发布，提供同签名 APK 与 SHA-256 校验文件。本仓库的 DashVoice 指针包含该发布源码及后续的发布验收记录；未自动安装到设备。
+
 DashVoice 使用 Kotlin 和 Jetpack Compose 实现，并包含：
 
 - Android `RecognitionService`
@@ -114,6 +137,10 @@ DashVoice 使用 Kotlin 和 Jetpack Compose 实现，并包含：
 - 基于 Kotlin 协程、Flow 和 kotlinx.serialization 的实时会话
 
 DashVoice 使用 `qwen3-asr-flash-realtime`，不固定识别语言。默认服务端 VAD 阈值为 `0.0`，默认静音结束时间为 `400 ms`。识别完成后，独立语音输入法会返回之前使用的输入法。
+
+默认值不代表现有手机设置：先前部署记录中，两部手机使用 `2000 ms` 静音阈值。2026-10-02/03 本地安装的 `0.1.1` 为 code `1` 的侧载包，不应与后续公开发布混为一谈。
+
+版本变更与修复范围见 [DashVoice changelog](DashVoice/CHANGELOG.md)。原先偶发的输入引擎不可用问题仍未确认根因，不能因更新 APK 或发布版本就标记为修复。
 
 ## 同步数据
 
@@ -130,7 +157,7 @@ sync/<installation_id>/
 ## 配置与凭据
 
 - 桌面端 OSS 凭据保存在 `~/.config/rime-oss/ossutil.conf`。
-- 桌面端百炼配置保存在 `~/.config/vinput/config.json`，该文件当前权限为 `600`。
+- 桌面端百炼配置保存在 `~/.config/vinput/config.json`；凭据文件应保持私有权限，不为更新本文读取或导入其内容。
 - Android 端百炼 API Key 和 Base URL 以明文保存在 DashVoice 的 Room 数据库中。
 - API Key、OSS AccessKey 和其他凭据不存放在本仓库中。
 - 语音音频会发送到阿里云百炼服务。
@@ -153,4 +180,4 @@ sync/<installation_id>/
 | fcitx5-vinput | 桌面端语音输入 | [xifan2333/fcitx5-vinput](https://github.com/xifan2333/fcitx5-vinput) | GPL-3.0 |
 | DashVoice | Android 端语音输入 | [Stream29/DashVoice](https://github.com/Stream29/DashVoice) | 仓库当前未包含许可证文件 |
 
-阿里云 OSS 和阿里云百炼属于外部托管服务，不属于上述开放源码软件组件。
+表中列出的是源码可见性和已知许可状态；公开仓库不等于自动授予开源许可。阿里云 OSS 和阿里云百炼属于外部托管服务。
