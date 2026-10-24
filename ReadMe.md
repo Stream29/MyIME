@@ -24,7 +24,7 @@ DeviceManagement
     └── DashVoice
 ```
 
-- 本仓库作为 DeviceManagement 的 submodule；[DashVoice](DashVoice/) 是本仓库的 submodule，避免在外层另留一份独立工作副本。
+- 本仓库作为 DeviceManagement 的 submodule；[DashVoice](https://github.com/Stream29/DashVoice) 位于本仓库的 `DashVoice/` 子模块，避免在外层另留一份独立工作副本。
 - 输入方案、组件关系和配置位置从本 README 进入；移动端语音实现和[发布记录](https://github.com/Stream29/DashVoice/releases)归 DashVoice 管理。
 - DeviceManagement 继续管理已有部署集成：`bin/rime-oss-sync`、`bin/sway-fcitx`、`systemd/user/rime-oss-sync.{service,timer}`、`sway/common.conf` 和 `systemd/user/vinput-daemon.service.d/override.conf`。本次不移动它们的线上路径，也不重启输入服务。
 - 私有词库、正在使用的数据库、同步数据、音频、凭据和设备备份不属于本仓库的公开配置。
@@ -140,7 +140,7 @@ DashVoice 使用 `qwen3-asr-flash-realtime`，不固定识别语言。默认服�
 
 默认值不代表现有手机设置：先前部署记录中，两部手机使用 `2000 ms` 静音阈值。2026-10-02/03 本地安装的 `0.1.1` 为 code `1` 的侧载包，不应与后续公开发布混为一谈。
 
-版本变更与修复范围见 [DashVoice changelog](DashVoice/CHANGELOG.md)。原先偶发的输入引擎不可用问题仍未确认根因，不能因更新 APK 或发布版本就标记为修复。
+版本变更与修复范围见 [DashVoice v0.1.1 changelog](https://github.com/Stream29/DashVoice/blob/v0.1.1/CHANGELOG.md)。原先偶发的输入引擎不可用问题仍未确认根因，不能因更新 APK 或发布版本就标记为修复。
 
 ## 同步数据
 
